@@ -39,11 +39,17 @@ Event currentEvent;
 
 boolean drawArcs;
 boolean drawCircles;
+boolean drawVertices;
+boolean record;
 
 void setup(){
   size(DEFAULT_HEIGHT, DEFAULT_WIDTH);
+  drawArcs = false;
+  drawCircles = false;
+  drawVertices = true; 
+  record = false;
   
-  seed = debugX.length+50;
+  seed = debugX.length+10;
   sites = new ArrayList<Site>(seed);
   cells = new Cell[seed];
   for(int i = 0; i < seed; i++){
@@ -96,6 +102,7 @@ ArcNode getUnderArc(PVector point){
           if(y >= node.startY && y <= node.endY){
             bestNode = node; 
             if(bestNode!=null){
+              //this indicates that there's something wrong with the beachline
               println("Found an extra node");  
             }
           }
@@ -164,7 +171,6 @@ void updateEndPoints(){
     node = node.next; 
   }  
 }
-
 
 //return null, or a pair of PVectors where
 PVector[] findArcIntersections(ArcNode arcNode, ArcNode other){
@@ -254,18 +260,6 @@ void drawVertices(){
   fill(0); 
 }
 
-void drawEdges(){
- fill(0,150,0); 
- for(int i = 0; i < seed; i++){
-   for(int j = 0; j < seed; j++){
-     Edge e = edges[i][j];
-     if(e!=null){
-      line(0, e.getY(0), width, e.getY(width));    
-     }
-   }  
- }
-}
-
 
 Edge getOrCreateEdge(Site site1, Site site2){
   Edge e = edges[site1.index][site2.index];
@@ -308,12 +302,14 @@ void drawUnderlyingArc(PVector point){
     stroke(0); 
   }  
 }
+
 boolean isOffScreen(PVector point){
   return point == null || point.x < 0 || point.y < 0 || point.x > width || point.y > height;  
 }
 
 void keyPressed(){
  if(keyCode == RIGHT){
+   //todo - implement stacking functionality for events so we can go back and forth
    if(!events.isEmpty()){
       Event event = events.poll();
       currentEvent = event; 
@@ -326,7 +322,7 @@ void keyPressed(){
           processCircleEvent((CircleEvent)event); 
           updateEndPoints();  
         }else{
-          
+          //we've hit a debugging event, so we should only continue to draw our graph
           updateEndPoints(); 
         }
       }
@@ -336,9 +332,8 @@ void keyPressed(){
       }else{         
         background(0); 
         drawSites();  
-        drawVertices();
-        for(VoronoiVertex v : voronoi){
-          println("Vertex at : "+v.point);   
+        if(drawVertices){
+          drawVertices();
         }
       }
       restart = !restart;
@@ -346,27 +341,42 @@ void keyPressed(){
     //saveFrame();   
  }else if(keyCode == ENTER){
    initialize();
+ } else if(keyCode == 'P'){
+     drawArcs = !drawArcs;
+ } else if(keyCode == 'C'){
+    drawCircles = !drawCircles;
+   println("pew pew pew"); 
+ } else if(keyCode == 'V'){
+   drawVertices = !drawVertices;  
+ } else if(keyCode == 'R'){
+   record = !record;  
+   if(record){
+     println("Currently recording!"); 
+   }else{
+     println("Recording has been turned off."); 
+   }  
  }
- //need to put in some UX stuff
-  
+ 
+ if(record){
+   saveFrame();  
+ } 
 }
 
-void draw(){
-
-  
+void draw(){  
   background(255);
   stroke(0);
    
- drawCircles(); 
-  drawCircleEvents();
+ if(drawCircles){  
+   drawCircles(); 
+   drawCircleEvents();
+  }
   drawSites();
-  drawOthers();
+
+  if(drawArcs){
+    drawOthers();
+  }
   drawArcPoints();
-  /*if(!events.isEmpty()){ 
-    drawParabolas();
-  }*/
-  //drawPossibleIntersections();
-  //drawEdges();
+
   stroke(150);
   for(int i = 0 ; i < seed; i++){
     for(int j = 0; j < seed; j++){
@@ -375,24 +385,14 @@ void draw(){
         if(edge.start != null && edge.end!=null){
            line(edge.start.x, edge.start.y, edge.end.x, edge.end.y); 
         
-        }else{
-          if(edge.end !=null){
-            stroke(0,150,150);
-            float y = edge.b;
-            line(0, edge.b, edge.end.x, edge.end.y); 
-            stroke(0);
-          }
-          if(edge.start!=null){
-            stroke(150,150,0);
-            line(width, width*edge.m+edge.b, edge.start.x, edge.start.y); 
-          }    
-          
         }
       }
     }  
   }
   stroke(0);
-  drawVertices(); 
+  if(drawVertices){
+    drawVertices(); 
+  }
   line(lineCoord, 0, lineCoord, height);
   if(currentEvent!=null){
       
@@ -417,8 +417,8 @@ void draw(){
          drawUnderlyingArc(currentEvent.point); 
         }
        stroke(150);
-        line(0, currentEvent.point.y, width, currentEvent.point.y);
-         stroke(0);
+       line(0, currentEvent.point.y, width, currentEvent.point.y);
+       stroke(0);
         
         strokeWeight(5);
         ellipse(currentEvent.point.x, currentEvent.point.y, 15, 15);
@@ -427,8 +427,6 @@ void draw(){
       stroke(0); 
       fill(255);
   }
-  //noLoop(); 
-     
 }
 
 //EVENT PROCESSING
@@ -450,13 +448,11 @@ void processSiteEvent(SiteEvent event){
     ArcNode upper = newArcNode.next;
     if(lower != null){  
       Edge e1 = getOrCreateEdge(lower.site, event.site);
-      println(getPoint(lower, event.site.point.y));
       e1.start = getPoint(lower, event.site.point.y); 
       checkForCircleEvent(lower);
     }
     if(upper!=null){
       Edge e2 = getOrCreateEdge(event.site, upper.site);
-       println(getPoint(lower, event.site.point.y));
       e2.start = getPoint(upper, event.site.point.y);
       checkForCircleEvent(upper);
     } 
@@ -497,28 +493,12 @@ void processCircleEvent(CircleEvent event){
   
   Edge e1 = getOrCreateEdge(lower.site, arcNode.site);
   e1.end = v.point;
-  /*
-  if(e1.end !=null){
-    e1.start = e1.end;  
-  }
-  e1 = getOrCreateEdge(arcNode.site, lower.site);
-  e1.end = v.point;
-  */
   
   Edge e2 = getOrCreateEdge(arcNode.site, upper.site);
   e2.end = v.point;
   
-  /*if(e2.end !=null){
-    e2.start = e2.end;
-  }
-  
-  Edge e2 = getOrCreateEdge(upper.site, arcNode.site);
-  e2.end = v.point; 
-  */
   Edge edge = getOrCreateEdge(lower.site, upper.site);
   edge.start = v.point; 
-  //edge = getOrCreateEdge(upper.site, lower.site);
-  //edge.start = v.point;
   
   //TODO - implement bounding cell logic, will need half edges to to this
   //need to complete half edges going into vertex (
@@ -591,9 +571,9 @@ void checkForCircleEvent(ArcNode arcNode){
          circleEvents.add(circleEvent);
          arcNode.circleEvent = circleEvent;  
          possibleIntersections.add(circle.center); 
-       }else{
+       }/*else{
          println("circle event is behind the sweepline, do no add"); 
-       }  
+       }  */
      }
     }
   }
@@ -610,7 +590,7 @@ PVector getPossibleIntersection(Edge e1, Edge e2){
     float x = (b2 - b1) / (m1 - m2);
     float y = m1*x + b1;
     intersection = new PVector(x,y); 
-    ellipse(x, y, 2, 2);    
+    //ellipse(x, y, 2, 2);    
   }
   return intersection;   
 }
