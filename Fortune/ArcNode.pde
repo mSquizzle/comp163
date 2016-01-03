@@ -82,9 +82,9 @@ PVector getPoint(ArcNode arc, float i){
   PVector calcPoint = null;
   
   PVector arcPoint = arc.site.point;
-  float p = arcPoint.x - lineCoord;
+  float p = (arcPoint.x - lineCoord)/2;
   float k = arcPoint.y;
-  float h = arcPoint.x - p/2; 
+  float h = arcPoint.x - p; 
   if(p!=0){
     float y = i;
     //x = y - k

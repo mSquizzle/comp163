@@ -37,6 +37,9 @@ int[] colorY = {0, 50, 100, 150, 200, 250, 200, 0};
  
 Event currentEvent;
 
+boolean drawArcs;
+boolean drawCircles;
+
 void setup(){
   size(DEFAULT_HEIGHT, DEFAULT_WIDTH);
   
@@ -92,6 +95,9 @@ ArcNode getUnderArc(PVector point){
         while(node.next != null){            
           if(y >= node.startY && y <= node.endY){
             bestNode = node; 
+            if(bestNode!=null){
+              println("Found an extra node");  
+            }
           }
           node = node.next;
       }
@@ -183,14 +189,14 @@ PVector[] findArcIntersections(ArcNode arcNode, ArcNode other){
   
   PVector[] points = null;
    
-    float p1 = point.x - lineCoord;
-    float p2 = otherPoint.x - lineCoord;
+    float p1 = (point.x - lineCoord)/2;
+    float p2 = (otherPoint.x - lineCoord)/2;
     
     float k1 = point.y;
     float k2 = otherPoint.y;
     
-    float h1 = point.x - p1/2;
-    float h2 = otherPoint.x - p2/2;
+    float h1 = point.x - p1;
+    float h2 = otherPoint.x - p2;
     
     float a = 4 * (p2 - p1);
     float b = 8 * (k2 * p1 - k1 * p2);
@@ -288,7 +294,6 @@ Edge getOrCreateEdge(Site site1, Site site2){
   if(e == null){              
     e = new Edge(site1, site2);
     edges[site1.index][site2.index] = e;
-    edges[site2.index][site1.index] = e;
   }  
   return e;
 }
@@ -330,7 +335,8 @@ boolean isOffScreen(PVector point){
 }
 
 void keyPressed(){
- if(!events.isEmpty()){
+ if(keyCode == LEFT){
+   if(!events.isEmpty()){
       Event event = events.poll();
       currentEvent = event; 
       lineCoord = event.point.x; 
@@ -359,7 +365,11 @@ void keyPressed(){
       }
       restart = !restart;
     }
-    //saveFrame(); 
+    //saveFrame();   
+ }else if(keyCode == ENTER){
+   initialize();
+ }
+  
 }
 
 void draw(){
@@ -568,7 +578,7 @@ void checkForCircleEvent(ArcNode arcNode){
      
      PVector cross = v2.cross(v1);
      
-     //converge = cross.z <= 0; 
+     //converge = cross.z < 0; 
      
      if(!converge){
         
