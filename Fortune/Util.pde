@@ -85,68 +85,6 @@ float findParabolaIntersections(ArcNode arcNode, ArcNode other){
 }
 
 
-ArcNode meh(PVector point){
-  if(rootNode == null){
-    return null;   
-  }else{  
-    ArcNode arcNode = rootNode;
-    ArcNode bestNode = rootNode;
-    ArcNode bestNodeDup = null; 
-    float xPrev = -MAX_INT;
-    while(arcNode.next != null){
-       //todo - determine is this is the best method for updating
-      //todo -> need to plug in the x value for our parabola and see if its the largest!
-      //
-      float y = point.y;
-      
-      float p = (arcNode.site.point.x - lineCoord)/2;
-      float k = arcNode.site.point.y;
-      float h = arcNode.site.point.x - p;
- 
-      float x = y - k;
-      x = x*x;
-      x = x/(4*p);
-      x = x+h;
-      if(x >= xPrev && x <= lineCoord){
-        if(bestNode.site.equals(arcNode.site)){
-          //println("found duplicate best match!"+arcNode.site);  
-          bestNodeDup = bestNode; 
-        }
-        bestNode = arcNode;
-        xPrev = x;
-      }
-      arcNode = arcNode.next;  
-    }
-    //if we found two parts of the same arc 
-    if(bestNodeDup != null){
-      if(bestNodeDup.site.equals(bestNode.site)){
-          ArcNode prev = bestNode.previous;
-          //question, why is the previous null?
-         //println("Point "+point); 
-         //println("Looking at "+bestNode.site);  
-          if(prev != null){
-           // println("Prev "+prev.site);
-            if(point.y < prev.site.point.y){
-             // println("returning best node dup");
-              return bestNodeDup;  
-            }
-          }else{
-            ArcNode next = bestNodeDup.next;
-            //println("Next "+next.site);
-            if(next!=null){
-              if(point.y < next.site.point.y){
-               // println("returning best node dup");
-                return bestNodeDup; 
-              }  
-            }   
-          }
-      }
-    }
-    return bestNode; 
-  } 
-
-}
-
 void drawArcPoints(){ 
  int x = 0;
  strokeWeight(3); 
@@ -171,20 +109,6 @@ void drawArcPoints(){
    }
    node = node.next; 
    x+=100;   
- }
- /*
- for(float y = 0; y < height; y+=.2){
-   if(node!=null){
-     stroke(x, 255, 0);
-     PVector point = getPoint(node, y);
-     if(point != null){
-       point(point.x, point.y);
-       if(y > node.endY){
-         node = node.next;   
-         x+=40;
-       }
-     }
-   }
- } */ 
+ } 
  strokeWeight(1);
 }

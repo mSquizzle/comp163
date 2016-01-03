@@ -43,7 +43,7 @@ boolean drawCircles;
 void setup(){
   size(DEFAULT_HEIGHT, DEFAULT_WIDTH);
   
-  seed = debugX.length;
+  seed = debugX.length+50;
   sites = new ArrayList<Site>(seed);
   cells = new Cell[seed];
   for(int i = 0; i < seed; i++){
@@ -126,52 +126,43 @@ void drawOthers(){
 //TODO - FIX CONTINUITY ISSUE
 void updateEndPoints(){
   ArcNode node = rootNode; 
-  println("Line coordinate is currently "+lineCoord);
-   String list = "";
-    while(node != null){
-        //edge case - the sweepline is currently at a node site
-        if(node.site.point.x == lineCoord){
-          
-          println(node.site+"setting startY to "+node.site.point.y);
-          println(node.site+"setting endY to "+node.site.point.y);          
-          node.startY = node.site.point.y;
-          node.endY = node.site.point.y;
-        }else{
-          if(node.previous !=null){
-            node.startY = node.previous.endY;
-            
-            println(node.site+"setting endY to "+node.previous.endY);
-            
-          }else{
-            node.startY = -MAX_INT;
-          }
-          if(node.next != null){
-            //the lower intersection will be stored at index 0 
-            if(node.next.site.point.x == lineCoord){
-              node.endY = node.next.site.point.y; 
-            }else{
-              PVector[] intersections = findArcIntersections(node, node.next);
-              if(node.site.point.x < node.next.site.point.x){
-                //this arc was possibly split by the next arc
-                //choose the lower endpoint
-                node.endY = intersections[0].y;
-                //println("interesections "+intersections[0]+" "+intersections[1]);              
-              }else{
-                //otherwise, this arc did the splitting, choose the upper endpoint
-                 //println("interesections "+intersections[0]+" "+intersections[1]);  
-             
-                node.endY = intersections[1].y;
-              }  
-            }
-          }else{
-            node.endY = MAX_INT;               
-          }
+  while(node != null){
+    //edge case - the sweepline is currently at a node site
+    if(node.site.point.x == lineCoord){          
+      node.startY = node.site.point.y;
+      node.endY = node.site.point.y;
+    }else{
+      if(node.previous !=null){
+        node.startY = node.previous.endY;
+        Edge e1 = getOrCreateEdge(node.previous.site, node.site);
+        PVector p = getPoint(node, node.startY);
+        if(p !=null){
+          e1.end = p;   
+        }
+      }else{
+        node.startY = -MAX_INT;
       }
-      list+=node.site.point+" -["+node.startY+" to "+node.endY+"]\n";
-      node = node.next; 
-    }  
-    println(list);
-    println("======");
+      if(node.next != null){
+        //the lower intersection will be stored at index 0 
+        if(node.next.site.point.x == lineCoord){
+          node.endY = node.next.site.point.y; 
+        }else{
+          PVector[] intersections = findArcIntersections(node, node.next);
+          if(node.site.point.x < node.next.site.point.x){
+            //this arc was possibly split by the next arc
+            //choose the lower endpoint
+            node.endY = intersections[0].y;              
+          }else{
+            //otherwise, this arc did the splitting, choose the upper endpoint
+            node.endY = intersections[1].y;
+          }  
+        }
+      }else{
+        node.endY = MAX_INT;               
+      }
+    }
+    node = node.next; 
+  }  
 }
 
 
@@ -213,56 +204,43 @@ PVector[] findArcIntersections(ArcNode arcNode, ArcNode other){
     float y1 = (-b + rt)/(2*a);
     float y2 = (-b - rt)/(2*a); 
     
-      //find x1
-      float x1 = y1 - k1;
-      x1 *= x1;
-      x1 = x1/4;
-      x1  = x1/p1;
-      x1 += h1;
-      //ellipse(x1, y1, 2, 2);
-  
-      //find x2
-      float x2 = y2 - k2;
-      x2 *= x2;
-      x2 = x2/4;
-      x2  = x2/p2;
-      x2 += h2; 
-      //ellipse(x2, y2, 2, 2);  
-  
-     if(y1 > y2){
-       points[0] = new PVector(x2,y2);
-       points[1] = new PVector(x1,y1);   
-     }else{
-       points[0] = new PVector(x1,y1);
-       points[1] = new PVector(x2,y2);
-     }
-    fill(0,0,150);
-    
-    ellipse(x1, y1, 5, 5);
-    ellipse(x2, y2, 5, 5);
-    fill(0);     
-  }
-  
+    //find x1
+    float x1 = y1 - k1;
+    x1 *= x1;
+    x1 = x1/4;
+    x1  = x1/p1;
+    x1 += h1;
+
+    //find x2
+    float x2 = y2 - k2;
+    x2 *= x2;
+    x2 = x2/4;
+    x2  = x2/p2;
+    x2 += h2; 
+
+   if(y1 > y2){
+     points[0] = new PVector(x2,y2);
+     points[1] = new PVector(x1,y1);   
+   }else{
+     points[0] = new PVector(x1,y1);
+     points[1] = new PVector(x2,y2);
+   }   
+  }  
   return points;
 }
-
 
 //DRAWING STUFF
 void drawCircleEvents(){ 
   fill(0,255,255);
-  for(CircleEvent circleEvent : circleEvents){
-     
+  for(CircleEvent circleEvent : circleEvents){     
     ellipse(circleEvent.circle.getRightmostPoint().x, circleEvent.circle.getRightmostPoint().y, 2,2);
-
   }
   fill(255);
 }
 void drawCircles(){
-  //fill(255);
   noFill(); 
   stroke(150);
   for(CircleEvent circleEvent : circleEvents){
-    
     ellipse(circleEvent.circle.center.x, circleEvent.circle.center.y, circleEvent.circle.radius*2, circleEvent.circle.radius*2);
   }  
   fill(255); 
@@ -369,6 +347,7 @@ void keyPressed(){
  }else if(keyCode == ENTER){
    initialize();
  }
+ //need to put in some UX stuff
   
 }
 
@@ -471,10 +450,14 @@ void processSiteEvent(SiteEvent event){
     ArcNode upper = newArcNode.next;
     if(lower != null){  
       Edge e1 = getOrCreateEdge(lower.site, event.site);
+      println(getPoint(lower, event.site.point.y));
+      e1.start = getPoint(lower, event.site.point.y); 
       checkForCircleEvent(lower);
     }
     if(upper!=null){
       Edge e2 = getOrCreateEdge(event.site, upper.site);
+       println(getPoint(lower, event.site.point.y));
+      e2.start = getPoint(upper, event.site.point.y);
       checkForCircleEvent(upper);
     } 
   }else{
@@ -513,28 +496,29 @@ void processCircleEvent(CircleEvent event){
   voronoi.add(v); 
   
   Edge e1 = getOrCreateEdge(lower.site, arcNode.site);
-  
+  e1.end = v.point;
+  /*
   if(e1.end !=null){
     e1.start = e1.end;  
   }
-  e1.end = v.point; 
-  
   e1 = getOrCreateEdge(arcNode.site, lower.site);
   e1.end = v.point;
+  */
   
-  Edge e2 = getOrCreateEdge(upper.site, arcNode.site);
-  if(e2.end !=null){
+  Edge e2 = getOrCreateEdge(arcNode.site, upper.site);
+  e2.end = v.point;
+  
+  /*if(e2.end !=null){
     e2.start = e2.end;
   }
-  e2.end = v.point;
-   
-  e2 = getOrCreateEdge(arcNode.site, upper.site);
-  e2.end = v.point;
   
+  Edge e2 = getOrCreateEdge(upper.site, arcNode.site);
+  e2.end = v.point; 
+  */
   Edge edge = getOrCreateEdge(lower.site, upper.site);
   edge.start = v.point; 
-  edge = getOrCreateEdge(upper.site, lower.site);
-  edge.start = v.point;
+  //edge = getOrCreateEdge(upper.site, lower.site);
+  //edge.start = v.point;
   
   //TODO - implement bounding cell logic, will need half edges to to this
   //need to complete half edges going into vertex (
@@ -614,7 +598,6 @@ void checkForCircleEvent(ArcNode arcNode){
     }
   }
 }
-   
        
 PVector getPossibleIntersection(Edge e1, Edge e2){
   PVector intersection = null;
@@ -636,7 +619,8 @@ void drawSites(){
   stroke(0);
   fill(255,0,255);
   for(Site site : sites){
-    fill(colorX[site.index], 0, colorY[site.index]);
+    //fill(colorX[site.index], 0, colorY[site.index]);
+    fill(255,0,255);
     ellipse(site.point.x, site.point.y, 10, 10); 
   }  
 }

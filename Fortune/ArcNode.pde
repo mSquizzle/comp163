@@ -67,12 +67,6 @@ void removeArcNode(ArcNode arcNode){
     next.previous = prev; 
   }
   
-  /*
-  println("Old chain ["+arcNode.previous.site+" - "+arcNode.site+" - "+arcNode.next.site+"]");
-  println("New chain "+prev.site+" - "+prev.next.site);
-  println("New chain "+next.previous.site+" - "+next.site); 
-  */
-  
   //disconnect our node completely  
   arcNode.previous = null;
   arcNode.next = null; 
