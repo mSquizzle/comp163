@@ -99,9 +99,9 @@ ArcNode meh(PVector point){
       //
       float y = point.y;
       
-      float p = arcNode.site.point.x - lineCoord;
+      float p = (arcNode.site.point.x - lineCoord)/2;
       float k = arcNode.site.point.y;
-      float h = arcNode.site.point.x - p/2;
+      float h = arcNode.site.point.x - p;
  
       float x = y - k;
       x = x*x;

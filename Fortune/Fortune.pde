@@ -47,10 +47,10 @@ void setup(){
   sites = new ArrayList<Site>(seed);
   cells = new Cell[seed];
   for(int i = 0; i < seed; i++){
-    int x = debugX[i];
-    int y = debugY[i];
-    //int x = (int)random(200, height - 200);
-    //int y = (int)random(200, height - 200); 
+    //int x = debugX[i];
+    //int y = debugY[i];
+    int x = (int)random(200, height - 200);
+    int y = (int)random(200, height - 200); 
     
     //sloppy, but whatevs 
     Site site = new Site(new PVector(x,y), i);
@@ -189,61 +189,61 @@ PVector[] findArcIntersections(ArcNode arcNode, ArcNode other){
   
   PVector[] points = null;
    
-    float p1 = (point.x - lineCoord)/2;
-    float p2 = (otherPoint.x - lineCoord)/2;
+  float p1 = (point.x - lineCoord)/2;
+  float p2 = (otherPoint.x - lineCoord)/2;
+  
+  float k1 = point.y;
+  float k2 = otherPoint.y;
+  
+  float h1 = point.x - p1;
+  float h2 = otherPoint.x - p2;
+  
+  float a = 4 * (p2 - p1);
+  float b = 8 * (k2 * p1 - k1 * p2);
+  //float c = 16 * p1 * p2 * (h1 - h2); 
+  float cY = 16 * p1 * p2 * (h1 - h2);
+  float cZ = 4 * (p2 * k1 * k1 - p1 * k2 *k2 );
+  float c = cY+cZ;
+  double disc = (double)(b*b - 4*a*c);    
+  
+  if(disc >= 0){
+    points = new PVector[2];
+    float rt = (float)Math.sqrt(disc);
     
-    float k1 = point.y;
-    float k2 = otherPoint.y;
+    float y1 = (-b + rt)/(2*a);
+    float y2 = (-b - rt)/(2*a); 
     
-    float h1 = point.x - p1;
-    float h2 = otherPoint.x - p2;
+      //find x1
+      float x1 = y1 - k1;
+      x1 *= x1;
+      x1 = x1/4;
+      x1  = x1/p1;
+      x1 += h1;
+      //ellipse(x1, y1, 2, 2);
+  
+      //find x2
+      float x2 = y2 - k2;
+      x2 *= x2;
+      x2 = x2/4;
+      x2  = x2/p2;
+      x2 += h2; 
+      //ellipse(x2, y2, 2, 2);  
+  
+     if(y1 > y2){
+       points[0] = new PVector(x2,y2);
+       points[1] = new PVector(x1,y1);   
+     }else{
+       points[0] = new PVector(x1,y1);
+       points[1] = new PVector(x2,y2);
+     }
+    fill(0,0,150);
     
-    float a = 4 * (p2 - p1);
-    float b = 8 * (k2 * p1 - k1 * p2);
-    //float c = 16 * p1 * p2 * (h1 - h2); 
-    float cY = 16 * p1 * p2 * (h1 - h2);
-    float cZ = 4 * (p2 * k1 * k1 - p1 * k2 *k2 );
-    float c = cY+cZ;
-    double disc = (double)(b*b - 4*a*c);    
-    
-    if(disc >= 0){
-      points = new PVector[2];
-      float rt = (float)Math.sqrt(disc);
-      
-      float y1 = (-b + rt)/(2*a);
-      float y2 = (-b - rt)/(2*a); 
-      
-        //find x1
-        float x1 = y1 - k1;
-        x1 *= x1;
-        x1 = x1/4;
-        x1  = x1/p1;
-        x1 += h1;
-        //ellipse(x1, y1, 2, 2);
-    
-        //find x2
-        float x2 = y2 - k2;
-        x2 *= x2;
-        x2 = x2/4;
-        x2  = x2/p2;
-        x2 += h2; 
-        //ellipse(x2, y2, 2, 2);  
-    
-       if(y1 > y2){
-         points[0] = new PVector(x2,y2);
-         points[1] = new PVector(x1,y1);   
-       }else{
-         points[0] = new PVector(x1,y1);
-         points[1] = new PVector(x2,y2);
-       }
-      fill(0,0,150);
-      
-      ellipse(x1, y1, 5, 5);
-      ellipse(x2, y2, 5, 5);
-      fill(0);     
-    }
-    
-    return points;
+    ellipse(x1, y1, 5, 5);
+    ellipse(x2, y2, 5, 5);
+    fill(0);     
+  }
+  
+  return points;
 }
 
 
@@ -335,7 +335,7 @@ boolean isOffScreen(PVector point){
 }
 
 void keyPressed(){
- if(keyCode == LEFT){
+ if(keyCode == RIGHT){
    if(!events.isEmpty()){
       Event event = events.poll();
       currentEvent = event; 
@@ -458,11 +458,11 @@ void processSiteEvent(SiteEvent event){
  
   if(arcNode !=null){
     if(arcNode.circleEvent !=null){
+      //remove this event from the queue since it's a false alarm
       events.remove(arcNode.circleEvent);
       circleEvents.remove(arcNode.circleEvent); 
       possibleIntersections.remove(arcNode.circleEvent.circle.center);
       arcNode.circleEvent = null; 
-      //remove this event from the queue since it's a false alarm  
     }
     //split and insert our new arc
     ArcNode   newArcNode = new ArcNode(event.site);
@@ -490,7 +490,7 @@ void processCircleEvent(CircleEvent event){
   ArcNode upper = arcNode.next;
   
   if(lower == null || upper == null){
-    //i don't think there's ever a case where this could happen, but... 
+    //this shouldn't happen, but putting it in just in case
     println("Something went wrong left or right is null");
     return; 
   }
@@ -569,7 +569,7 @@ void checkForCircleEvent(ArcNode arcNode){
     if(intersection !=null){
       
      boolean converge = true;  
-     
+     /*
      PVector mid1 = e1.mid;
      PVector mid2 = e2.mid;
      
@@ -577,11 +577,18 @@ void checkForCircleEvent(ArcNode arcNode){
      PVector v2 = new PVector(intersection.x-mid2.x, intersection.y-mid2.y);
      
      PVector cross = v2.cross(v1);
+     */
+     //if our points are ccw, then they converge
+     PVector a = lower.site.point;
+     PVector b = arcNode.site.point;
+     PVector c = upper.site.point; 
      
-     //converge = cross.z < 0; 
+     PVector v1 = new PVector(b.x - a.x, b.y - a.y);//b.sub(a);
+     PVector v2 = new PVector(c.x - b.x, c.y- b.y);//c.sub(b);
      
-     if(!converge){
-        
+     converge = v1.cross(v2).z < 0; 
+     
+     if(!converge){        
        return;  
      }
     
@@ -642,9 +649,9 @@ void drawParabola(PVector point, float start, float end){
   //p = 200
   //x = (y - k)^2 / 4 * p + h
   
-  float p = point.x - lineCoord;
+  float p = (point.x - lineCoord)/2;
   float k = point.y;
-  float h = point.x - p/2; 
+  float h = point.x - p; 
    
   float startY = start;
   if(startY < 0){
