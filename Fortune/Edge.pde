@@ -1,5 +1,7 @@
 class Edge{
-
+  
+  //TODO - NEED TO PUT IN BETTER HANDLING FOR VERTICAL LINES
+  
   Site site1;
   Site site2;
  
@@ -11,6 +13,7 @@ class Edge{
   float m;
   float b; 
   
+  boolean isVertical; 
   Edge(Site site1, Site site2){
     this.site1 = site1;
     this.site2 = site2;  
@@ -24,9 +27,16 @@ class Edge{
     //now need to find b
     //y = mx + b
     //b = mx - y;
-    m = -dx/dy;
-    b = midY - m*midX;
-    mid = new PVector(midX, midY); 
+    if(dy == 0){
+      isVertical = true;   
+      //m = -MAX_INT
+      mid = new PVector(site1.point.x,midY);
+    }else{
+      isVertical = false;
+      m = -dx/dy;
+      b = midY - m*midX;
+      mid = new PVector(midX, midY); 
+    }
   }
   
   float getY(float x){

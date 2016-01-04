@@ -62,9 +62,7 @@ void insertArcNode(ArcNode current, ArcNode nodeToInsert){
       //step 3: hook up clone to the node to be inserted
       nodeToInsert.next = currentRight; 
       nodeToInsert.startY = nodeToInsert.site.point.y;
-      nodeToInsert.endY = nodeToInsert.site.point.y;
-      
-      //getOrCreateEdge(current.site, nodeToInsert.site); 
+      nodeToInsert.endY = nodeToInsert.site.point.y; 
     }
   }
 }

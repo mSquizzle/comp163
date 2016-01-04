@@ -29,18 +29,22 @@ Cell[] cells;
 //our list of discovered edges
 Edge[][] edges;
 
-int[] debugX = {101, 200, 150/*303*/, 440, 442, 579, 664, 775};
+//int[] debugX = {101, 200, 300};//, 150/*303*/, 440, 442, 579, 664, 775};
 //int[] debugX = {301, 500, 350/*303*/, 640, 642, 779, 864, 975};
-int[] debugY = {301, 500, 700/*650*/,250, 851, 551, 224, 766};
-int[] colorX = {0, 50, 100, 150, 200, 250, 0, 180};
-int[] colorY = {0, 50, 100, 150, 200, 250, 200, 0};
- 
+//int[] debugY = {30/*1, 500,*/,30, 30};//, 700/*650*/,250, 851, 551, 224, 766};
+
+int[] debugX = {200, 400, 600, 800};
+int[] debugY = {400,400,400, 400};
+
 Event currentEvent;
 
 boolean drawArcs;
 boolean drawCircles;
 boolean drawVertices;
 boolean record;
+boolean drawSiteEllipses;
+
+int testSeed;
 
 void setup(){
   size(DEFAULT_HEIGHT, DEFAULT_WIDTH);
@@ -49,15 +53,26 @@ void setup(){
   drawVertices = true; 
   record = false;
   
-  seed = debugX.length+10;
+  debug = true;
+  
+  if(debug){
+    seed = debugX.length;
+  }else{
+    seed = DEFAULT_SEED;  
+  }
+ 
   sites = new ArrayList<Site>(seed);
   cells = new Cell[seed];
   for(int i = 0; i < seed; i++){
-    //int x = debugX[i];
-    //int y = debugY[i];
-    int x = (int)random(200, height - 200);
-    int y = (int)random(200, height - 200); 
-    
+    int x;
+    int y;
+    if(debug){
+      x = debugX[i];
+      y = debugY[i];
+    }else{
+      x = (int)random(200, height - 200);
+      y = (int)random(200, height - 200); 
+    }
     //sloppy, but whatevs 
     Site site = new Site(new PVector(x,y), i);
     sites.add(site);
@@ -70,7 +85,8 @@ void setup(){
 boolean restart;
 boolean debug;  
 void initialize(){ 
-  rootNode = null; 
+  rootNode = null;   
+  println(seed);
   edges = new Edge[seed][seed]; 
   cells = new Cell[seed];
   lineCoord = 0;
@@ -79,7 +95,6 @@ void initialize(){
   voronoi = new ArrayList<VoronoiVertex>();
   createEvents();
   currentEvent = null;
-  debug = true;
 }
 
 void createEvents(){
@@ -90,6 +105,9 @@ void createEvents(){
     if(debug){
       events.add(new Event(new PVector(site.point.x+70, site.point.y)));
     }
+  }
+  if(debug){
+    events.add(new Event(new PVector(width*20, height/2)));   
   }
 }
 
@@ -117,20 +135,17 @@ ArcNode getUnderArc(PVector point){
 
 void drawOthers(){
   ArcNode node = rootNode;
-
     while(node!=null){
       for(float y = 0; y < height; y+=1){
         PVector point = getPoint(node, y);
         if(point!=null){
           point(point.x, point.y);
-        }  
-        
+        }          
       }
       node = node.next;
     }  
 }
 
-//TODO - FIX CONTINUITY ISSUE
 void updateEndPoints(){
   ArcNode node = rootNode; 
   while(node != null){
@@ -138,6 +153,7 @@ void updateEndPoints(){
     if(node.site.point.x == lineCoord){          
       node.startY = node.site.point.y;
       node.endY = node.site.point.y;
+      println("Yekk");
     }else{
       if(node.previous !=null){
         node.startY = node.previous.endY;
@@ -152,13 +168,15 @@ void updateEndPoints(){
       if(node.next != null){
         //the lower intersection will be stored at index 0 
         if(node.next.site.point.x == lineCoord){
+          println("hello world!");
           node.endY = node.next.site.point.y; 
         }else{
           PVector[] intersections = findArcIntersections(node, node.next);
+          println("Intersections ["+intersections[0]+","+intersections[1]+"]");
           if(node.site.point.x < node.next.site.point.x){
             //this arc was possibly split by the next arc
             //choose the lower endpoint
-            node.endY = intersections[0].y;              
+            node.endY = intersections[0].y;            
           }else{
             //otherwise, this arc did the splitting, choose the upper endpoint
             node.endY = intersections[1].y;
@@ -355,6 +373,8 @@ void keyPressed(){
    }else{
      println("Recording has been turned off."); 
    }  
+ } else if(keyCode =='E'){
+   drawSiteEllipses = !drawSiteEllipses;
  }
  
  if(record){
@@ -581,27 +601,44 @@ void checkForCircleEvent(ArcNode arcNode){
        
 PVector getPossibleIntersection(Edge e1, Edge e2){
   PVector intersection = null;
-  if(!e1.equals(e2)){
-    float m1 = e1.m;
-    float m2 = e2.m;
-    float b1 = e1.b;
-    float b2 = e2.b;
-
-    float x = (b2 - b1) / (m1 - m2);
-    float y = m1*x + b1;
-    intersection = new PVector(x,y); 
-    //ellipse(x, y, 2, 2);    
+  if(!e1.equals(e2) && !(e1.isVertical && e2.isVertical) && !(e1.m == e2.m)){
+    if(e1.isVertical){
+      float m2 = e2.m;
+      float x = e1.mid.x;
+      float y = e2.m*x + e2.b;
+      intersection = new PVector(x,y);
+    }else if(e2.isVertical){
+      float m1 = e1.m;
+      float x = e2.mid.x;
+      float y = e1.m*x + e1.b;
+      intersection = new PVector(x,y);
+    }else{
+      float m1 = e1.m;
+      float m2 = e2.m;
+      float b1 = e1.b;
+      float b2 = e2.b;
+  
+      float x = (b2 - b1) / (m1 - m2);
+      float y = m1*x + b1;
+      intersection = new PVector(x,y); 
+    }    
   }
   return intersection;   
 }
 
 void drawSites(){
   stroke(0);
-  fill(255,0,255);
-  for(Site site : sites){
-    //fill(colorX[site.index], 0, colorY[site.index]);
+  if(drawSiteEllipses){
     fill(255,0,255);
-    ellipse(site.point.x, site.point.y, 10, 10); 
+  }else{
+    strokeWeight(2);  
+  }
+  for(Site site : sites){
+    if(drawSiteEllipses){
+      ellipse(site.point.x, site.point.y, 10, 10);
+    }else{
+      point(site.point.x, site.point.y); 
+    } 
   }  
 }
 
