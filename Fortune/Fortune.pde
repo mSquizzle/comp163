@@ -12,6 +12,7 @@ ArcNode rootNode;
 //sweepline
 float lineCoord;
 int seed = DEFAULT_SEED;
+int margin = 200;
 
 PriorityQueue<Event> events;
 ArrayList<Site> sites;
@@ -45,6 +46,7 @@ boolean drawCircles;
 boolean drawVertices;
 boolean record;
 boolean drawSiteEllipses;
+boolean addBufferEvents;
 
 Set<PVector> points;
 
@@ -72,18 +74,17 @@ void setup(){
       x = debugX[i];
       y = debugY[i];
     }else{
-      x = (int)random(200, height - 200);
-      y = (int)random(200, height - 200); 
+      x = (int)random(margin, height - margin);
+      y = (int)random(margin, height - margin); 
     }
     //sloppy, but whatevs 
     
     PVector potentialPoint = new PVector(x,y);
     
     while(points.contains(potentialPoint)){
-      x = (int)random(200, height - 200);
-      y = (int)random(200, height - 200);        
+      x = (int)random(margin, height - margin);
+      y = (int)random(margin, height - margin);        
       potentialPoint = new PVector(x,y);
-      println("GOT THERE");
     }
     points.add(potentialPoint); 
     Site site = new Site(potentialPoint, i);
@@ -114,7 +115,7 @@ void createEvents(){
   for(Site site : sites){
     Event siteEvent = new SiteEvent(site);
     events.add(siteEvent);
-    if(debug){
+    if(debug || addBufferEvents){
       events.add(new Event(new PVector(site.point.x+10, site.point.y)));
       events.add(new Event(new PVector(site.point.x+20, site.point.y)));
       events.add(new Event(new PVector(site.point.x+30, site.point.y)));
@@ -322,6 +323,7 @@ boolean isOffScreen(PVector point){
 }
 
 void keyPressed(){
+ //todo - clean this up 
  if(keyCode == RIGHT){
    //todo - implement stacking functionality for events so we can go back and forth
    if(!events.isEmpty()){
@@ -351,8 +353,8 @@ void keyPressed(){
         }
       }
       restart = !restart;
-    }   
- }else if(keyCode == ENTER){
+    }
+ }else if(keyCode == ENTER || keyCode == RETURN){
    initialize();
  } else if(keyCode == 'P'){
      drawArcs = !drawArcs;
@@ -380,6 +382,20 @@ void keyPressed(){
    }
    println("Seed decreased to "+seed);
    setup();
+ } else if(keyCode =='Q'){
+   setup();  
+ } else if(keyCode == 'A'){
+   margin -= 10;
+   if(margin < 10){
+     margin = 10;
+   }  
+ } else if(keyCode == 'S'){
+   margin += 10;
+   if(margin > height/2){
+     margin = height/4;  
+   }
+ } else if(keyCode == 'B'){
+   addBufferEvents = !addBufferEvents;  
  }
  
  if(record){
@@ -432,7 +448,7 @@ void draw(){
           }
         }else if (currentEvent instanceof CircleEvent){
           noFill();
-          strokeWeight(3);
+          //strokeWeight(3);
           CircleEvent circleEvent = (CircleEvent)currentEvent;
           ellipse(circleEvent.circle.center.x, circleEvent.circle.center.y, circleEvent.circle.radius*2, circleEvent.circle.radius*2); 
           line(circleEvent.circle.center.x, circleEvent.circle.center.y, circleEvent.point.x, circleEvent.point.y); 
@@ -445,11 +461,11 @@ void draw(){
          }
         }
        stroke(150);
-       line(0, currentEvent.point.y, width, currentEvent.point.y);
+   //    line(0, currentEvent.point.y, width, currentEvent.point.y);
        stroke(0);
         
         strokeWeight(5);
-        ellipse(currentEvent.point.x, currentEvent.point.y, 15, 15);
+ //       ellipse(currentEvent.point.x, currentEvent.point.y, 15, 15);
         strokeWeight(1);
       }
       stroke(0); 
