@@ -26,21 +26,40 @@ class ArcNode{
 void insertArcNode(ArcNode current, ArcNode nodeToInsert){
   if(current == null){
     //in this case, we're setting the root
-    rootNode = nodeToInsert;
+    if(rootNode == null){
+      rootNode = nodeToInsert;  
+    }else{
+      //append to our list
+      ArcNode node = rootNode;
+      while(node.next != null){
+        node = node.next;  
+      }
+      node.next = nodeToInsert;
+      nodeToInsert.previous = node;  
+    }
   }
   else{
     if(current.site.point.x == nodeToInsert.site.point.x){
     //if these points are at the same x Coordinate, we shouldn't split, just insert in order
     //if we do split, this causes some issues with the beachline, and can trigger some false circle events
     //most importantly, this makes the beachline cross over itself, and it looks uuuuuuuugly
-      println("FOUND TWO POINTS THAT SHARE THE SAME X AND ARE NEIGHBORS"); 
-      if(current.site.point.y < current.site.point.y){
-      //insert in order  
-        
+      if(current.next !=null){
+        //not sure if this is a case?
+        ArcNode temp = current.next;
+        temp.previous = nodeToInsert;
+        nodeToInsert.next = temp; 
+
+        current.next = nodeToInsert;
+        nodeToInsert.previous = current;  
       }else{
-      //insert in the other order
+        current.next = nodeToInsert;
+        nodeToInsert.previous = current;
         
-      }
+        Edge e = getOrCreateEdge(nodeToInsert.site,current.site);
+        if(e.start == null){          
+          e.start = e.mid;   
+        }
+      }            
     }else{
       ArcNode currentRight = new ArcNode(current.site);
       
@@ -62,7 +81,7 @@ void insertArcNode(ArcNode current, ArcNode nodeToInsert){
       //step 3: hook up clone to the node to be inserted
       nodeToInsert.next = currentRight; 
       nodeToInsert.startY = nodeToInsert.site.point.y;
-      nodeToInsert.endY = nodeToInsert.site.point.y; 
+      nodeToInsert.endY = nodeToInsert.site.point.y;     
     }
   }
 }

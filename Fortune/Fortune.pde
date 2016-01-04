@@ -11,9 +11,8 @@ ArcNode rootNode;
 
 //sweepline
 float lineCoord;
-int seed;
+int seed = DEFAULT_SEED;
 
-//event queue (need to implement sorting for this)
 PriorityQueue<Event> events;
 ArrayList<Site> sites;
 
@@ -29,13 +28,16 @@ Cell[] cells;
 //our list of discovered edges
 Edge[][] edges;
 
-//int[] debugX = {101, 200, 300};//, 150/*303*/, 440, 442, 579, 664, 775};
+//various debugging configurations, don't worry about these.
+//int[] debugX = {101, 200, 150/*303*/, 440, 442, 579, 664, 775};
 //int[] debugX = {301, 500, 350/*303*/, 640, 642, 779, 864, 975};
-//int[] debugY = {30/*1, 500,*/,30, 30};//, 700/*650*/,250, 851, 551, 224, 766};
+//int[] debugY = {30, 500, 500/*650*/,250, 851, 551, 224, 766};
 
-int[] debugX = {200, 400, 600, 800};
-int[] debugY = {400,400,400, 400};
+//int[] debugX = {200, 400, 600, 800};
+//int[] debugY = {400,400,400, 400};
 
+int[] debugX = {200, 400, 350, 300, 300};
+int[] debugY = {400, 400, 200, 300, 300};
 Event currentEvent;
 
 boolean drawArcs;
@@ -44,7 +46,7 @@ boolean drawVertices;
 boolean record;
 boolean drawSiteEllipses;
 
-int testSeed;
+Set<PVector> points;
 
 void setup(){
   size(DEFAULT_HEIGHT, DEFAULT_WIDTH);
@@ -52,15 +54,15 @@ void setup(){
   drawCircles = false;
   drawVertices = true; 
   record = false;
+  drawSiteEllipses = true; 
   
-  debug = true;
+  //debug = true;
   
   if(debug){
     seed = debugX.length;
-  }else{
-    seed = DEFAULT_SEED;  
   }
  
+  points = new HashSet<PVector>(seed);
   sites = new ArrayList<Site>(seed);
   cells = new Cell[seed];
   for(int i = 0; i < seed; i++){
@@ -74,7 +76,17 @@ void setup(){
       y = (int)random(200, height - 200); 
     }
     //sloppy, but whatevs 
-    Site site = new Site(new PVector(x,y), i);
+    
+    PVector potentialPoint = new PVector(x,y);
+    
+    while(points.contains(potentialPoint)){
+      x = (int)random(200, height - 200);
+      y = (int)random(200, height - 200);        
+      potentialPoint = new PVector(x,y);
+      println("GOT THERE");
+    }
+    points.add(potentialPoint); 
+    Site site = new Site(potentialPoint, i);
     sites.add(site);
     cells[i] = new Cell(site);
   }
@@ -86,7 +98,7 @@ boolean restart;
 boolean debug;  
 void initialize(){ 
   rootNode = null;   
-  println(seed);
+  //println(seed);
   edges = new Edge[seed][seed]; 
   cells = new Cell[seed];
   lineCoord = 0;
@@ -103,34 +115,13 @@ void createEvents(){
     Event siteEvent = new SiteEvent(site);
     events.add(siteEvent);
     if(debug){
-      events.add(new Event(new PVector(site.point.x+70, site.point.y)));
+      events.add(new Event(new PVector(site.point.x+10, site.point.y)));
+      events.add(new Event(new PVector(site.point.x+20, site.point.y)));
+      events.add(new Event(new PVector(site.point.x+30, site.point.y)));
+      events.add(new Event(new PVector(site.point.x+40, site.point.y)));
     }
   }
-  if(debug){
     events.add(new Event(new PVector(width*20, height/2)));   
-  }
-}
-
-ArcNode getUnderArc(PVector point){
-    ArcNode node = rootNode;
-    ArcNode bestNode = rootNode;
-    float y = point.y;
-    if(rootNode !=null){
-        while(node.next != null){            
-          if(y >= node.startY && y <= node.endY){
-            bestNode = node; 
-            if(bestNode!=null){
-              //this indicates that there's something wrong with the beachline
-              println("Found an extra node");  
-            }
-          }
-          node = node.next;
-      }
-      if(y >= node.startY && y <= node.endY){
-          bestNode = node.next; 
-      }
-    } 
-    return bestNode;
 }
 
 void drawOthers(){
@@ -153,7 +144,6 @@ void updateEndPoints(){
     if(node.site.point.x == lineCoord){          
       node.startY = node.site.point.y;
       node.endY = node.site.point.y;
-      println("Yekk");
     }else{
       if(node.previous !=null){
         node.startY = node.previous.endY;
@@ -168,15 +158,17 @@ void updateEndPoints(){
       if(node.next != null){
         //the lower intersection will be stored at index 0 
         if(node.next.site.point.x == lineCoord){
-          println("hello world!");
           node.endY = node.next.site.point.y; 
         }else{
           PVector[] intersections = findArcIntersections(node, node.next);
-          println("Intersections ["+intersections[0]+","+intersections[1]+"]");
+          //println("Intersections ["+intersections[0]+","+intersections[1]+"]");
           if(node.site.point.x < node.next.site.point.x){
             //this arc was possibly split by the next arc
             //choose the lower endpoint
-            node.endY = intersections[0].y;            
+            node.endY = intersections[0].y;                        
+          }else if(node.site.point.x == node.next.site.point.x){
+            float dy = node.site.point.y - node.next.site.point.y;
+            node.endY = node.site.point.y - dy/2;
           }else{
             //otherwise, this arc did the splitting, choose the upper endpoint
             node.endY = intersections[1].y;
@@ -188,6 +180,7 @@ void updateEndPoints(){
     }
     node = node.next; 
   }  
+ // println("===============");
 }
 
 //return null, or a pair of PVectors where
@@ -196,7 +189,7 @@ PVector[] findArcIntersections(ArcNode arcNode, ArcNode other){
  
   PVector point = arcNode.site.point;
   PVector otherPoint = other.site.point;
-  
+  //this is just for consistency
   if(point.y > otherPoint.y){
     point = otherPoint;
     otherPoint = arcNode.site.point;   
@@ -249,7 +242,10 @@ PVector[] findArcIntersections(ArcNode arcNode, ArcNode other){
      points[0] = new PVector(x1,y1);
      points[1] = new PVector(x2,y2);
    }   
-  }  
+  }else{
+    println("There is no intersection for "+point+" and "+otherPoint+" when lineCoord is at "+lineCoord);
+    println(disc);  
+  } 
   return points;
 }
 
@@ -355,15 +351,13 @@ void keyPressed(){
         }
       }
       restart = !restart;
-    }
-    //saveFrame();   
+    }   
  }else if(keyCode == ENTER){
    initialize();
  } else if(keyCode == 'P'){
      drawArcs = !drawArcs;
  } else if(keyCode == 'C'){
-    drawCircles = !drawCircles;
-   println("pew pew pew"); 
+    drawCircles = !drawCircles; 
  } else if(keyCode == 'V'){
    drawVertices = !drawVertices;  
  } else if(keyCode == 'R'){
@@ -375,6 +369,17 @@ void keyPressed(){
    }  
  } else if(keyCode =='E'){
    drawSiteEllipses = !drawSiteEllipses;
+ } else if(keyCode == 'I'){
+   seed++;
+   println("Seed increased to "+seed);
+   setup(); 
+ } else if(keyCode == 'D'){
+   seed--;
+   if(seed < 3){
+      seed = 3; 
+   }
+   println("Seed decreased to "+seed);
+   setup();
  }
  
  if(record){
@@ -404,7 +409,6 @@ void draw(){
       if(edge!=null){
         if(edge.start != null && edge.end!=null){
            line(edge.start.x, edge.start.y, edge.end.x, edge.end.y); 
-        
         }
       }
     }  
@@ -413,17 +417,19 @@ void draw(){
   if(drawVertices){
     drawVertices(); 
   }
+  stroke(0);
+  strokeWeight(1);
   line(lineCoord, 0, lineCoord, height);
   if(currentEvent!=null){
-      
-       
       if(isOffScreen(currentEvent.point)){
         //println("The current point is off of the screen "+currentEvent.point); 
       }
       else{
         if(currentEvent instanceof SiteEvent){
           fill(200,0,200);
-          drawUnderlyingArc(currentEvent.point);
+          if(debug){
+            drawUnderlyingArc(currentEvent.point);
+          }
         }else if (currentEvent instanceof CircleEvent){
           noFill();
           strokeWeight(3);
@@ -431,10 +437,12 @@ void draw(){
           ellipse(circleEvent.circle.center.x, circleEvent.circle.center.y, circleEvent.circle.radius*2, circleEvent.circle.radius*2); 
           line(circleEvent.circle.center.x, circleEvent.circle.center.y, circleEvent.point.x, circleEvent.point.y); 
           fill(0,255,0);
-       strokeWeight(1);   
+          strokeWeight(1);   
           
         }else{
-         drawUnderlyingArc(currentEvent.point); 
+         if(debug){
+           drawUnderlyingArc(currentEvent.point); 
+         }
         }
        stroke(150);
        line(0, currentEvent.point.y, width, currentEvent.point.y);
@@ -550,18 +558,14 @@ void checkForCircleEvent(ArcNode arcNode){
     Edge e2 = getOrCreateEdge(arcNode.site, upper.site);
     
     PVector intersection = getPossibleIntersection(e1, e2);
+    if(intersection == null && debug){
+      println("no intersection found");  
+    }
+    //println(intersection);
     if(intersection !=null){
       
      boolean converge = true;  
-     /*
-     PVector mid1 = e1.mid;
-     PVector mid2 = e2.mid;
      
-     PVector v1 = new PVector(mid1.x-intersection.x, mid1.y-intersection.y);
-     PVector v2 = new PVector(intersection.x-mid2.x, intersection.y-mid2.y);
-     
-     PVector cross = v2.cross(v1);
-     */
      //if our points are ccw, then they converge
      PVector a = lower.site.point;
      PVector b = arcNode.site.point;
@@ -570,17 +574,17 @@ void checkForCircleEvent(ArcNode arcNode){
      PVector v1 = new PVector(b.x - a.x, b.y - a.y);//b.sub(a);
      PVector v2 = new PVector(c.x - b.x, c.y- b.y);//c.sub(b);
      
-     converge = v1.cross(v2).z < 0; 
+     converge = v1.cross(v2).z < 0;
      
      if(!converge){        
-       return;  
+         //println("no converge");
+         return;  
      }
     
-     //will return if e1 == e2 or e1 || to e2
+     //will return null if e1 == e2 or e1 || to e2
      Circle circle = new Circle(lower.site, arcNode.site, upper.site);
      if(circle!=null){
-       float radius = circle.radius;
-       if(circle.center.x + radius > lineCoord){
+       if(circle.getRightmostPoint().x >= lineCoord){
          CircleEvent circleEvent = new CircleEvent(circle.getRightmostPoint(), circle, arcNode);
          if(arcNode.circleEvent!=null){   
            events.remove(arcNode.circleEvent);
@@ -591,9 +595,9 @@ void checkForCircleEvent(ArcNode arcNode){
          circleEvents.add(circleEvent);
          arcNode.circleEvent = circleEvent;  
          possibleIntersections.add(circle.center); 
-       }/*else{
+       }else if (debug){
          println("circle event is behind the sweepline, do no add"); 
-       }  */
+       }  
      }
     }
   }
@@ -610,7 +614,7 @@ PVector getPossibleIntersection(Edge e1, Edge e2){
     }else if(e2.isVertical){
       float m1 = e1.m;
       float x = e2.mid.x;
-      float y = e1.m*x + e1.b;
+      float y = e1.m*x+e1.b;
       intersection = new PVector(x,y);
     }else{
       float m1 = e1.m;
@@ -623,6 +627,7 @@ PVector getPossibleIntersection(Edge e1, Edge e2){
       intersection = new PVector(x,y); 
     }    
   }
+  //println(intersection);
   return intersection;   
 }
 
@@ -680,16 +685,14 @@ void drawParabola(PVector point, float start, float end){
   
 }
 
+//note, don't use this when processing a circle event
 ArcNode getUnderlyingArc(PVector point){
   ArcNode node = rootNode;
   ArcNode bestNode = node;
-  while(node != null){
-    if(point.y == node.site.point.y){
-      bestNode = node;  
-    }else{
-      if(node.startY <= point.y && node.endY >= point.y){
-        bestNode = node; 
-      }
+  float maxX = -MAX_INT;
+  while(node != null){     
+    if(node.startY <= point.y && node.endY >= point.y){
+      bestNode = node;       
     }
     node = node.next;
   }

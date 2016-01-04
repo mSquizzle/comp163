@@ -87,11 +87,16 @@ float findParabolaIntersections(ArcNode arcNode, ArcNode other){
 
 void drawArcPoints(){ 
  int x = 0;
- strokeWeight(3); 
+  
  ArcNode node = rootNode;
+ int b = 0;
+ if(debug){
+   b = 255;   
+   strokeWeight(3);
+ }
  
  while(node!=null){
-   stroke(x, 255, 0);
+   stroke(x, b, 0);
    float y = node.startY;
    if(node.startY < 0){
      y = 0;
@@ -107,8 +112,10 @@ void drawArcPoints(){
      }
      y+=.2;
    }
-   node = node.next; 
-   x+=100;   
+   node = node.next;
+  if(debug){ 
+     x+=50;  
+  } 
  } 
  strokeWeight(1);
 }

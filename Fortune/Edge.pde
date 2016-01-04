@@ -29,8 +29,8 @@ class Edge{
     //b = mx - y;
     if(dy == 0){
       isVertical = true;   
-      //m = -MAX_INT
-      mid = new PVector(site1.point.x,midY);
+      m = -MAX_INT;
+      mid = new PVector(midX,midY);
     }else{
       isVertical = false;
       m = -dx/dy;
