@@ -1,7 +1,7 @@
 # Comp 163
 Putterings for Comp 163 - Fall 2015
 
-#Fortune's Algorithm (Done_...ish_)
+#Fortune's Algorithm (Done*...ish*)
 
 ##Application
 
@@ -151,4 +151,4 @@ Other operations, like checking for circle events, or updating pointers can be d
 
 ##Helpful Links
 + http://www.raymondhill.net/voronoi/rhill-voronoi.html - full implementation in Javascript by Raymond Hill
-+ http://www.ams.org/samplings/feature-column/fcarc-voronoi
++ http://www.ams.org/samplings/feature-column/fcarc-voronoi - article breaking down how the algorithm works
