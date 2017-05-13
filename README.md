@@ -1,9 +1,9 @@
 # Comp 163
 Putterings for Comp 163 - Fall 2015
 
-#Fortune's Algorithm (Done*...ish*)
+# Fortune's Algorithm (Done*...ish*)
 
-##Application
+## Application
 
 This project was developed in Processing (version 2.2.1)  and the source files are available under /Fortune. I've provided the exported versions of this application for Windows and Linux. Unfortunately, I do not have access to a Mac, and cannot export to one (this is a known limitation of Processing's export). If you're using a Mac and would like to use the application, you will need to download Processing and perform the export manually. 
 
@@ -26,16 +26,16 @@ S | Increases the margin with bounds the points. Will get reset if height/2 is r
 
 Note: this is not an entirely faithful implementation of Fortune's algorithm. I'm currently storing the beach line as a doubly-linked list, whereas the beach line described by Fortune is implemented as a balanced binary tree. I also do not completely construct the data structures that support the cells, since I'm only visualizing them. 
 
-##Description:
+## Description:
 
-###Voronoi Diagrams 
+### Voronoi Diagrams 
 Before a discussion of Fortune’s algorithm can be discussed, we need to quickly explain the goal of the algorithm: finding the Voronoi diagram. Given a set of sites, a Voronoi diagram constructs a cell for each site, where all the points contained in that cell are closer to that site than any other site in the set. 
 
 One of the primary uses of Voronoi diagrams are for planning purposes. For example, if a town wants to add a new school that will cover the most area (reducing areas covered by other schools), it will need to figure out which neighborhoods are closest to the already existing schools. The town will need to place the school at the corner of a cell in order to optimize the number of neighborhoods that will be contained in the new school’s district. 
 
 The boundaries of these cells are formed by bisectors between adjacent sites. Corners are formed by the intersection of one or more of these bisectors.
 
-###Algorithm
+### Algorithm
 Fortune's algorithm is a sweepline algorithm that is able to efficiently construct the Voronoi Diagram of a set of points. It creates a beach line of parabolas, which are used to determine the location of Voronoi vertices (and link edges to those vertices). Through the use of the beach line and sweepline, we are able to cut down on the number of comparisions each point will need to make in order to determine the bounds of its cell. The algorithm generates events based off of sites and the beach line. These are stored in a priority queue, organized by lowest y coordinate\*. The sweep line moves through the plane by jumping from event to event.
 
 The **beach line** is a monotone structure composed of arcs, which are the visible portions (from the sweepline) of the parabolas generated using the sites as foci and the sweepline as the directrix.
@@ -54,11 +54,12 @@ When a new point queries the tree to find the which are in the beachline it line
 Whenever an arc is added or removed from the beach line, we add or remove pairs of nodes from our tree, one leaf (our arc) and one internal node (the leaf’s parent). In addition, we must also update any nodes that are impacted by this action and potentially rebalance the tree. 
 
 ===
+
 \*_Note that for the implementation with the video/code, the sweep is actually moving horizontally, this was purely a matter of personal preference._
 
 \*\*_There are some edge-cases where this isn’t exactly true, but most of those would require very specific configurations that would violate the assumption of general position. They are also fairly computationally trivial to deal with and do not significantly impact performance_
 
-##Pseudo Code (simplified)
+## Pseudo Code (simplified)
 **Input** - S, a set of points _we'll refer to these points as sites to avoid confusion_ 
 
 **Output** - the Voronoi Diagram of that point set
@@ -148,7 +149,7 @@ checkForCircleEvent(Arc arc){
 }
 ```
 
-##Analysis
+## Analysis
 This algorithm is considered efficient as it is O(n log n) for time and O(n) for space.\* O(n log n ) is an accepted lower bound for this problem, because this problem reduces to other problems that share this same limit. For example, this is also the lower bound for finding a convex hull; finding a Voronoi diagram of a point set would enable you to also  determine the convex hull points, since points on the convex hull would have unbounded cells, and could be found by traversing the edges of the Voronoi diagram. 
 
 The first reason it is able to achieve that level of efficiency is due to the structure of the beach line. Since the beach line is stored as a balanced binary search tree, we are able to both update and query in O(log b) time (where b is the number of nodes in the tree). If we consider when the beach line is updated, it only increases in size when we encounter a new Site Event, which splits the current arc in two and inserts a new arc, leaving a net gain of 2 arcs. The only time this isn't true is at the beginning, when there are no arcs to split, or when we encounter several horizontally collinear points in succession. This means that at most we have 2n-1 arcs present in the beach line at any given time. This allows us to claim that operations like searching and updating the beach line takes only O(log n) instead of O(n).
@@ -158,14 +159,15 @@ This leaves our queue as the other place to potentially drive up run time. If we
 Other operations, like checking for circle events, or updating pointers can be done in constant time. Overall, this leaves us with an O(n long n) algorithm for finding the Voronoi Diagram of a set of points. 
  
 ===
-\*_This current implementation is neither._:broken_heart:
-##TODOs:
 
-####Explanations
+\*_This current implementation is neither._:broken_heart:
+## TODOs:
+
+#### Explanations
 + provide images for examples
 + elaborate on event processing in demo
 
-####Functionality
+#### Functionality
 + see if there's a fix for the density issue
 + finish bounding cells
 + add tree implementation
@@ -173,7 +175,7 @@ Other operations, like checking for circle events, or updating pointers can be d
 + stack implementation for state(allowing moving forwards and backwards)
 + optimize parabola drawing (use Bezier curves)
 
-##Helpful Links
+## Helpful Links
 + http://www.raymondhill.net/voronoi/rhill-voronoi.html - full implementation in Javascript by Raymond Hill
 + http://www.ams.org/samplings/feature-column/fcarc-voronoi - article with a good general overview for how this algorithm works
 + http://www.cescg.org/CESCG99/RCuk/ - set of pages that delves into the data structures necessary for implementing this algorithm
