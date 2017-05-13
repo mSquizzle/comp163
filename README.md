@@ -1,7 +1,4 @@
-# Comp 163
-Putterings for Comp 163 - Fall 2015
-
-# Fortune's Algorithm (Done*...ish*)
+# Fortune's Algorithm (Done...ish)
 
 ## Application
 
