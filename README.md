@@ -50,7 +50,7 @@ When a new point queries the tree to find the which are in the beachline it line
 
 Whenever an arc is added or removed from the beach line, we add or remove pairs of nodes from our tree, one leaf (our arc) and one internal node (the leaf’s parent). In addition, we must also update any nodes that are impacted by this action and potentially rebalance the tree. 
 
-===
+---
 
 \*_Note that for the implementation with the video/code, the sweep is actually moving horizontally, this was purely a matter of personal preference._
 
@@ -155,7 +155,7 @@ This leaves our queue as the other place to potentially drive up run time. If we
 
 Other operations, like checking for circle events, or updating pointers can be done in constant time. Overall, this leaves us with an O(n long n) algorithm for finding the Voronoi Diagram of a set of points. 
  
-===
+---
 
 \*_This current implementation is neither._:broken_heart:
 ## TODOs:
